@@ -46,8 +46,9 @@ Create a branch with a [conventionnal name](https://tilburgsciencehub.com/buildi
 
 ## 📌 Roadmap
 
-- [ ] Fix set-upstream params
+- [x] Fix set-upstream creation when first commit
 - [ ] Choose upstream during commit
+- [ ] Bash support
 
 ## 📑 License
 

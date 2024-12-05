@@ -1,36 +1,34 @@
 function commit() {
     local current_dir=$(pwd)
+
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+        echo "Error: This is not a Git repository."
+        exit 1
+    fi
+
+    local local_branch_name=$(git rev-parse --abbrev-ref HEAD)
     local git_root=$(git rev-parse --show-toplevel 2>/dev/null)
 
-    if [[ $? -ne 0 ]]; then
-        echo "Error: Not a git repository"
-        return 1
+    git add .
+
+    if ! git commit; then
+        echo "Commit aborted or failed."
+        exit 1
     fi
 
-    cd "$git_root" || return 1
+    if git rev-parse --abbrev-ref --symbolic-full-name @{u} &>/dev/null; then
+        local remote_branch=$(git rev-parse --abbrev-ref @{u})
+        echo "The local branch '$local_branch_name' is tracking the remote branch '$remote_branch'."
+        git push
+    else
+        echo "The local branch '$local_branch_name' does not have a remote branch configured."
+        read "response?Do you want to create it? (yes/no): "
 
-    local branch_name=$(git rev-parse --abbrev-ref HEAD)
-
-    git rev-parse --abbrev-ref --symbolic-full-name @{u} &>/dev/null
-
-    if [[ $? -ne 0 ]]; then
-        read -p "Branch '$branch_name' has no upstream branch. Do you want to create it? (yes/no): " response
-
-        if [[ "$response" == "yes" ]] || [[ "$response" == "Y" ]] || [[ "$response" == "y" ]]; then
+        if [[ "$response" =~ ^(yes|y|Y)$ ]]; then
             echo "Creating upstream branch and pushing..."
-            git add .
-            git commit .
-            git push -u origin "$branch_name"
+            git push -u origin "$local_branch_name"
         else
             echo "Skipping upstream branch creation."
-            git add .
-            git commit .
         fi
-    else
-        git add .
-        git commit .
-        git push
     fi
-
-    cd "$current_dir" || return 1
 }
