@@ -1,8 +1,6 @@
 function commit() {
     local current_dir=$(pwd)
-
-    local git_root
-    git_root=$(git rev-parse --show-toplevel 2>/dev/null)
+    local git_root=$(git rev-parse --show-toplevel 2>/dev/null)
 
     if [[ $? -ne 0 ]]; then
         echo "Error: Not a git repository"
@@ -11,8 +9,7 @@ function commit() {
 
     cd "$git_root" || return 1
 
-    local branch_name
-    branch_name=$(git rev-parse --abbrev-ref HEAD)
+    local branch_name=$(git rev-parse --abbrev-ref HEAD)
 
     git rev-parse --abbrev-ref --symbolic-full-name @{u} &>/dev/null
 
