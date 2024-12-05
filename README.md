@@ -2,7 +2,7 @@
 
 🎾 Bash Utility to quickly commits code
 
-Version : 1.0.0 (WIP)
+Version : 1.0.0
 
 ## 🚀 Installation
 
