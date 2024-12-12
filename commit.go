@@ -53,9 +53,12 @@ func main() {
 				fmt.Println(err)
 				os.Exit(1)
 			}
+
+			println("Upstream branch created successfully.")
+			os.Exit(0)
 		}
 
-		print("Upstream branch not created. Exiting...")
+		println("Upstream branch not created. Exiting...")
 	}
 
 	os.Exit(0)
