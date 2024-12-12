@@ -1,6 +1,6 @@
 # commit
 
-🎾 Bash Utility to quickly commits code
+🎾 Quickly commits code
 
 Version : 1.0.0
 
@@ -48,7 +48,7 @@ Create a branch with a [conventionnal name](https://tilburgsciencehub.com/buildi
 
 - [x] Fix set-upstream creation when first commit
 - [ ] Choose upstream during commit
-- [ ] Bash support
+- [ ] Rewrite in Go
 
 ## 📑 License
 
