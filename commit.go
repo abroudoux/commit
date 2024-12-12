@@ -2,11 +2,15 @@ package main
 
 import (
 	"bufio"
+	_ "embed"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 )
+
+//go:embed assets/ascii.txt
+var asciiArt string
 
 func main() {
 	err := isGitInstalled()
@@ -19,6 +23,11 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	if len(os.Args) > 1 {
+		flagMode()
+		os.Exit(0)
 	}
 
 	err = addAllFiles()
@@ -141,4 +150,21 @@ func pushCode() error {
 	}
 
 	return nil
+}
+
+func flagMode() {
+	flag := os.Args[1]
+
+	if flag == "--version" || flag == "-v" {
+		fmt.Println(asciiArt)
+		fmt.Println("2.0.0")
+	} else if flag == "--help" || flag == "-h" {
+		printHelpManual()
+	}
+}
+
+func printHelpManual() {
+	fmt.Println("Usage: commit [options]")
+	fmt.Printf("  %-20s %s\n", "commit", "Commits all changes and pushes to the current branch")
+	fmt.Printf("  %-20s %s\n", "commit [--help | -h]", "Show this help message")
 }
