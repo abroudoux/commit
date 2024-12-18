@@ -1,6 +1,6 @@
 # commit
 
-🎾 Quickly commits code
+🌴 Quickly commits code
 
 Version : 2.0.0
 
