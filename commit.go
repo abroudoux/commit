@@ -155,6 +155,32 @@ func pushCode() error {
 func flagMode() {
 	flag := os.Args[1]
 
+	if flag == "--add" || flag == "-a" {
+		// files, err := chooseFilesToAdd()
+		// if err != nil {
+		// 	fmt.Println(err)
+		// 	os.Exit(1)
+		// }
+
+		// for _, file := range files {
+		// 	// err := addFile(file)
+		// 	// if err != nil {
+		// 	// 	fmt.Println(err)
+		// 	// 	os.Exit(1)
+		// 	// }
+		// 	println(file)
+		// }
+
+		filesModified, err := getAllFiles()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		for _, file := range filesModified {
+			println(file)
+		}
+	}
 	if flag == "--version" || flag == "-v" {
 		fmt.Println(asciiArt)
 		fmt.Println("2.0.0")
@@ -167,4 +193,126 @@ func printHelpManual() {
 	fmt.Println("Usage: commit [options]")
 	fmt.Printf("  %-20s %s\n", "commit", "Commits all changes and pushes to the current branch")
 	fmt.Printf("  %-20s %s\n", "commit [--help | -h]", "Show this help message")
+}
+
+type File struct {
+	Name string
+	Status string
+}
+
+// type filesChoice struct {
+// 	files []File
+// 	cursor int
+// 	filesSelected map[int]struct{}
+// }
+
+// func initialModel() (filesChoice, error) {
+// 	files, err := getAllFiles()
+// 	if err != nil {
+// 		return filesChoice{}, fmt.Errorf("error getting all files: %v", err)
+// 	}
+
+// 	return filesChoice{
+// 		files: files,
+// 		cursor: len(files) - 1,
+// 		filesSelected: make(map[int]struct{}),
+// 	}, nil
+// }
+
+func chooseFilesToAdd() {} 
+
+func getAllFiles() ([]string, error) {
+	_, err := getfilesModified()
+	if err != nil {
+		return nil, fmt.Errorf("error getting modified files: %v", err)
+	}
+
+	_, err = getFilesDeleted()
+	if err != nil {
+		return nil, fmt.Errorf("error getting deleted files: %v", err)
+	}
+
+	_, err = getFilesRenamed()
+	if err != nil {
+		return nil, fmt.Errorf("error getting renamed files: %v", err)
+	}
+
+	_, err = getFilesCreated()
+	if err != nil {
+		return nil, fmt.Errorf("error getting created files: %v", err)
+	}
+
+	return nil, nil
+}
+
+func getfilesModified() ([]string, error) {
+	cmd := exec.Command("git", "ls-files", "--modified")
+	filesModified, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("error getting modified files: %v", err)
+	}
+
+	println("Modified files:")
+	for _, file := range strings.Split(string(filesModified), "\n") {
+		if file == "" {
+			continue
+		}
+		println(file)
+	}
+
+	return strings.Split(string(filesModified), "\n"), nil
+}
+
+func getFilesDeleted() ([]string, error) {
+	cmd := exec.Command("git", "ls-files", "--deleted")
+	filesDeleted, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("error getting deleted files: %v", err)
+	}
+
+	println("Deleted files:")
+	for _, file := range strings.Split(string(filesDeleted), "\n") {
+		if file == "" {
+			continue
+		}
+		println(file)
+	}
+
+	return strings.Split(string(filesDeleted), "\n"), nil
+}
+
+func getFilesRenamed() ([]string, error) {
+	cmd := exec.Command("git", "ls-files", "--renames")
+	filesRenames, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("error getting renamed files: %v", err)
+	}
+
+	println("Renamed files:")
+	for _, file := range strings.Split(string(filesRenames), "\n") {
+		if file == "" {
+			continue
+		}
+		println(file)
+	}
+
+	return strings.Split(string(filesRenames), "\n"), nil
+}
+
+func getFilesCreated() ([]string, error) {
+	cmd := exec.Command("git", "ls-files", "--others")
+	filesCreated, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("error getting created files: %v", err)
+	}
+
+	println("Created files:")
+	for _, file := range strings.Split(string(filesCreated), "\n") {
+		if file == "" {
+			continue
+		}
+		println(file)
+	}
+
+	return strings.Split(string(filesCreated), "\n"), nil
 }
