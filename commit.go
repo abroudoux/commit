@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 //go:embed assets/ascii.txt
@@ -159,13 +161,18 @@ func flagMode() error {
 	flag := os.Args[1]
 
 	if flag == "--add" || flag == "-a" {
-		filesModified, err := getAllFiles()
+		files, err := getAllFiles()
 		if err != nil {
 			return err
 		}
 
-		for _, file := range filesModified {
-			println(file)
+		filesSelected, err := chooseFiles(files)
+		if err != nil {
+			return err
+		}
+
+		for _, file := range filesSelected {
+			println(file.Name)
 		}
 	}
 	if flag == "--version" || flag == "-v" {
@@ -249,7 +256,7 @@ func getAllFiles() ([]File, error) {
 		allFiles = append(allFiles, fileToAdd)
 	}
 
-	return nil, nil
+	return allFiles, nil
 }
 
 func getfilesModified() ([]string, error) {
@@ -274,12 +281,12 @@ func getFilesDeleted() ([]string, error) {
 
 func getFilesRenamed() ([]string, error) {
 	cmd := exec.Command("git", "ls-files", "--renames")
-	filesRenames, err := cmd.Output()
+	filesRenamed, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("error getting renamed files: %v", err)
 	}
 
-	return strings.Split(string(filesRenames), "\n"), nil
+	return strings.Split(string(filesRenamed), "\n"), nil
 }
 
 func getFilesCreated() ([]string, error) {
@@ -290,4 +297,78 @@ func getFilesCreated() ([]string, error) {
 	}
 
 	return strings.Split(string(filesCreated), "\n"), nil
+}
+
+type FilesChoices struct {
+	files []File
+	cursor int
+	filesSelected map[int]struct{}
+}
+
+func initialModel(files []File) FilesChoices {
+	return FilesChoices{
+		files: files,
+		filesSelected: make(map[int]struct{}),
+	}
+}
+
+func (model FilesChoices) Init() tea.Cmd {
+	return nil
+}
+
+func (model FilesChoices) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return model, tea.Quit
+		case "up":
+			if model.cursor > 0 {
+				model.cursor--
+			}
+		case "down":
+			if model.cursor < len(model.files)-1 {
+				model.cursor++
+			}
+		case "enter":
+			_, ok := model.filesSelected[model.cursor]
+			if ok {
+				delete(model.filesSelected, model.cursor)
+			} else {
+				model.filesSelected[model.cursor] = struct{}{}
+			}
+		}
+	} 
+
+	return model, nil
+}
+
+func (model FilesChoices) View() string {
+	s := "Which files do you want to add?"
+
+	for i, choice := range model.filesSelected {
+		cursor := " "
+		if model.cursor == i {
+			cursor = ">"
+		}
+
+		checked := " "
+		if _, ok := model.filesSelected[i]; ok {
+			checked = "x"
+		}
+
+		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+	}
+
+	return s
+}
+
+func chooseFiles(files []File) ([]File, error) {
+	filesMenu := tea.NewProgram(initialModel(files))
+	_, err := filesMenu.Run()
+	if err != nil {
+		return []File{}, fmt.Errorf("error running the files menu: %v", err)
+	}
+
+	return files, fmt.Errorf("error running the files menu: %v", err)
 }
