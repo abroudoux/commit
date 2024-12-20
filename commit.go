@@ -15,14 +15,12 @@ var asciiArt string
 func main() {
 	err := isGitInstalled()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		printErrorAndExit(err)
 	}
 
 	err = isInGitRepository()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		printErrorAndExit(err)
 	}
 
 	if len(os.Args) > 1 {
@@ -32,35 +30,47 @@ func main() {
 
 	err = addAllFiles()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		printErrorAndExit(err)
 	}
 
 	err = writeCommitMessage()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		printErrorAndExit(err)
+	}
+
+	err = checkIfRemoteExists()
+	if err != nil {
+		addOrigin, err := askUser("Remote repository not found, would you want to add it?")
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
+		if addOrigin {
+			err := addRemoteRepository()
+			if err != nil {
+				printErrorAndExit(err)
+			}
+
+			println("Remote repository added successfully!")
+		}
 	}
 
 	err = checkIfUpstreamBranchExists()
 	if err == nil {
 		err = pushCode()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			printErrorAndExit(err)
 		}
 	} else {
 		createUpstreamBranch, err := askUser("Upstream branch does not exist. Would you like to create it?")
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			printErrorAndExit(err)
 		}
 
 		if createUpstreamBranch {
 			err := pushCode()
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
+				printErrorAndExit(err)
 			}
 
 			println("Upstream branch created successfully.")
@@ -167,4 +177,45 @@ func printHelpManual() {
 	fmt.Println("Usage: commit [options]")
 	fmt.Printf("  %-20s %s\n", "commit", "Commits all changes and pushes to the current branch")
 	fmt.Printf("  %-20s %s\n", "commit [--help | -h]", "Show this help message")
+}
+
+func checkIfRemoteExists() error {
+	cmd := exec.Command("git", "ls-remote")
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("remote repository not found")
+	}
+
+	return nil
+}
+
+func askInput(message string) (string, error) {
+	var input string
+	fmt.Print(message)
+	_, err := fmt.Scanln(&input)
+	if err != nil {
+		return "", fmt.Errorf("error reading input: %v", err)
+	}
+
+	return input, nil
+}
+
+func addRemoteRepository() error {
+	remoteRepositoryUrl, err := askInput("Enter the url link of the remote repository: ")
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("git", "remote", "add", "origin", remoteRepositoryUrl)
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func printErrorAndExit(err error) {
+	println(err)
+	os.Exit(1)
 }
