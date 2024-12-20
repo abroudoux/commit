@@ -166,6 +166,10 @@ func flagMode() error {
 			return err
 		}
 
+		for _, file := range files {
+			println(file.Name)
+		}
+
 		filesSelected, err := chooseFiles(files)
 		if err != nil {
 			return err
@@ -174,8 +178,7 @@ func flagMode() error {
 		for _, file := range filesSelected {
 			println(file.Name)
 		}
-	}
-	if flag == "--version" || flag == "-v" {
+	} else if flag == "--version" || flag == "-v" {
 		fmt.Println(asciiArt)
 		latestRealease, err := getLatestRelease()
 		if err != nil {
@@ -205,8 +208,6 @@ type File struct {
 const (
 	Modified string = "modified"
 	Deleted string = "deleted"
-	Renamed string = "renamed"
-	Created string = "created"
 )
 
 func getAllFiles() ([]File, error) {
@@ -217,8 +218,10 @@ func getAllFiles() ([]File, error) {
 		return nil, fmt.Errorf("error getting modified files: %v", err)
 	}
 
-	// println("Files Modified:")
 	for _, file := range filesModified {
+		if file == "" {
+			continue
+		}
 		fileToAdd := File{Name: file, Status: Modified}
 		allFiles = append(allFiles, fileToAdd)
 	}
@@ -228,31 +231,11 @@ func getAllFiles() ([]File, error) {
 		return nil, fmt.Errorf("error getting deleted files: %v", err)
 	}
 
-	// println("Files Deleted:")
 	for _, file := range filesDeleted {
+		if file == "" {
+			continue
+		}
 		fileToAdd := File{Name: file, Status: Deleted}
-		allFiles = append(allFiles, fileToAdd)
-	}
-
-	filesRenamed, err := getFilesRenamed()
-	if err != nil {
-		return nil, fmt.Errorf("error getting renamed files: %v", err)
-	}
-
-	// println("Files Renamed:")
-	for _, file := range filesRenamed {
-		fileToAdd := File{Name: file, Status: Renamed}
-		allFiles = append(allFiles, fileToAdd)
-	}
-
-	filesCreated, err := getFilesCreated()
-	if err != nil {
-		return nil, fmt.Errorf("error getting created files: %v", err)
-	}
-
-	// println("Files Created:")
-	for _, file := range filesCreated {
-		fileToAdd := File{Name: file, Status: Created}
 		allFiles = append(allFiles, fileToAdd)
 	}
 
@@ -277,26 +260,6 @@ func getFilesDeleted() ([]string, error) {
 	}
 
 	return strings.Split(string(filesDeleted), "\n"), nil
-}
-
-func getFilesRenamed() ([]string, error) {
-	cmd := exec.Command("git", "ls-files", "--renames")
-	filesRenamed, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("error getting renamed files: %v", err)
-	}
-
-	return strings.Split(string(filesRenamed), "\n"), nil
-}
-
-func getFilesCreated() ([]string, error) {
-	cmd := exec.Command("git", "ls-files", "--others")
-	filesCreated, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("error getting created files: %v", err)
-	}
-
-	return strings.Split(string(filesCreated), "\n"), nil
 }
 
 type FilesChoices struct {
