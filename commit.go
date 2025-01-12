@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 //go:embed assets/ascii.txt
@@ -24,7 +26,10 @@ func main() {
 	}
 
 	if len(os.Args) > 1 {
-		flagMode()
+		err := flagMode()
+		if err != nil {
+			println(err)
+		}
 		os.Exit(0)
 	}
 
@@ -162,15 +167,41 @@ func pushCode() error {
 	return nil
 }
 
-func flagMode() {
+func flagMode() error {
 	flag := os.Args[1]
 
-	if flag == "--version" || flag == "-v" {
+	if flag == "--add" || flag == "-a" {
+		files, err := getAllFiles()
+		if err != nil {
+			return err
+		}
+
+		for _, file := range files {
+			println(file.Name)
+		}
+
+		filesSelected, err := chooseFiles(files)
+		if err != nil {
+			return err
+		}
+
+		for _, file := range filesSelected {
+			println(file.Name)
+		}
+	} else if flag == "--version" || flag == "-v" {
 		fmt.Println(asciiArt)
-		fmt.Println("2.0.0")
+		latestRealease, err := getLatestRelease()
+		if err != nil {
+			println("Latest version not avaible")
+			os.Exit(1)
+		}
+
+		println(latestRealease)
 	} else if flag == "--help" || flag == "-h" {
 		printHelpManual()
 	}
+
+	return nil
 }
 
 func printHelpManual() {
@@ -179,43 +210,138 @@ func printHelpManual() {
 	fmt.Printf("  %-20s %s\n", "commit [--help | -h]", "Show this help message")
 }
 
-func checkIfRemoteExists() error {
-	cmd := exec.Command("git", "ls-remote")
-	err := cmd.Run()
+type File struct {
+	Name string
+	Status string
+}
+
+const (
+	Modified string = "modified"
+	Deleted string = "deleted"
+)
+
+func getAllFiles() ([]File, error) {
+	var allFiles []File = []File{}
+
+	filesModified, err := getfilesModified()
 	if err != nil {
-		return fmt.Errorf("remote repository not found")
+		return nil, fmt.Errorf("error getting modified files: %v", err)
 	}
 
+	for _, file := range filesModified {
+		if file == "" {
+			continue
+		}
+		fileToAdd := File{Name: file, Status: Modified}
+		allFiles = append(allFiles, fileToAdd)
+	}
+
+	filesDeleted, err := getFilesDeleted()
+	if err != nil {
+		return nil, fmt.Errorf("error getting deleted files: %v", err)
+	}
+
+	for _, file := range filesDeleted {
+		if file == "" {
+			continue
+		}
+		fileToAdd := File{Name: file, Status: Deleted}
+		allFiles = append(allFiles, fileToAdd)
+	}
+
+	return allFiles, nil
+}
+
+func getfilesModified() ([]string, error) {
+	cmd := exec.Command("git", "ls-files", "--modified")
+	filesModified, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("error getting modified files: %v", err)
+	}
+
+	return strings.Split(string(filesModified), "\n"), nil
+}
+
+func getFilesDeleted() ([]string, error) {
+	cmd := exec.Command("git", "ls-files", "--deleted")
+	filesDeleted, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("error getting deleted files: %v", err)
+	}
+
+	return strings.Split(string(filesDeleted), "\n"), nil
+}
+
+type FilesChoices struct {
+	files []File
+	cursor int
+	filesSelected map[int]struct{}
+}
+
+func initialModel(files []File) FilesChoices {
+	return FilesChoices{
+		files: files,
+		filesSelected: make(map[int]struct{}),
+	}
+}
+
+func (model FilesChoices) Init() tea.Cmd {
 	return nil
 }
 
-func askInput(message string) (string, error) {
-	var input string
-	fmt.Print(message)
-	_, err := fmt.Scanln(&input)
-	if err != nil {
-		return "", fmt.Errorf("error reading input: %v", err)
-	}
+func (model FilesChoices) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return model, tea.Quit
+		case "up":
+			if model.cursor > 0 {
+				model.cursor--
+			}
+		case "down":
+			if model.cursor < len(model.files)-1 {
+				model.cursor++
+			}
+		case "enter":
+			_, ok := model.filesSelected[model.cursor]
+			if ok {
+				delete(model.filesSelected, model.cursor)
+			} else {
+				model.filesSelected[model.cursor] = struct{}{}
+			}
+		}
+	} 
 
-	return input, nil
+	return model, nil
 }
 
-func addRemoteRepository() error {
-	remoteRepositoryUrl, err := askInput("Enter the url link of the remote repository: ")
-	if err != nil {
-		return err
+func (model FilesChoices) View() string {
+	s := "Which files do you want to add?"
+
+	for i, choice := range model.filesSelected {
+		cursor := " "
+		if model.cursor == i {
+			cursor = ">"
+		}
+
+		checked := " "
+		if _, ok := model.filesSelected[i]; ok {
+			checked = "x"
+		}
+
+		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
 	}
 
-	cmd := exec.Command("git", "remote", "add", "origin", remoteRepositoryUrl)
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s
 }
 
-func printErrorAndExit(err error) {
-	println(err)
-	os.Exit(1)
+func chooseFiles(files []File) ([]File, error) {
+	filesMenu := tea.NewProgram(initialModel(files))
+	_, err := filesMenu.Run()
+	if err != nil {
+		return []File{}, fmt.Errorf("error running the files menu: %v", err)
+	}
+
+	return files, fmt.Errorf("error running the files menu: %v", err)
 }

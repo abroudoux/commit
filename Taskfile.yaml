@@ -1,0 +1,17 @@
+version: "3"
+
+tasks:
+  run:
+    desc: Run the app
+    cmds:
+      - GOGLAGS=-mod=mod go build -o bin/commit commit.go && go run ./bin/commit
+
+  build:
+    desc: Build the app
+    cmds:
+      - GOGLAGS=-mod=mod go build -o bin/commit *.go
+
+  clean:
+    desc: Clean the app
+    cmds:
+      - rm -rf dist

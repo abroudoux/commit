@@ -2,8 +2,6 @@
 
 🌴 Quickly commits code
 
-Version : 2.0.0
-
 ## 🚀 Installation
 
 ### Via Homebrew
