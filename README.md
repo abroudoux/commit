@@ -43,7 +43,8 @@ Create a branch with a [conventionnal name](https://tilburgsciencehub.com/buildi
 - [ ] Choose upstream during commit
 - [x] Rewrite in Go
 - [ ] More options during `git add` step
+- [ ] Installation via Homebrew
 
 ## 📑 License
 
-This project is under MIT license. For more information, please see the file [LICENSE](./LICENSE).
+This project is under [MIT License](LICENSE).
