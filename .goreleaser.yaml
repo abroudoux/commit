@@ -3,12 +3,6 @@ version: 2
 builds:
   - main: ./cmd/main.go
     binary: commit
-    goos:
-      - darwin
-      - linux
-    goarch:
-      - amd64
-      - arm64
     env:
       - CGO_ENABLED=0
     flags:
