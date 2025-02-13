@@ -6,7 +6,19 @@
 
 ### Via Homebrew
 
-Wip 🚧
+Add my tap by running
+
+```bash
+brew tap abroudoux/tap
+```
+
+You can now download `commit
+
+```bash
+brew install abroudoux/tap/commit
+```
+
+Enjoy!
 
 ### Manual
 
@@ -43,7 +55,7 @@ Create a branch with a [conventionnal name](https://tilburgsciencehub.com/buildi
 - [ ] Choose upstream during commit
 - [x] Rewrite in Go
 - [ ] More options during `git add` step
-- [ ] Installation via Homebrew
+- [x] Installation via Homebrew
 
 ## 📑 License
 
