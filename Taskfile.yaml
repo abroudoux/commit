@@ -1,12 +1,13 @@
 version: "3"
 
 tasks:
-  run:
-    desc: Run the app
-    cmds:
-      - GOGLAGS=-mod=mod task build && ./bin/commit
-
   build:
     desc: Build the app
     cmds:
-      - GOGLAGS=-mod=mod go build -o bin/commit cmd/main.go
+      - go build -o bin/commit cmd/main.go
+
+  run:
+    desc: Run the app
+    cmds:
+      - task build
+      - ./bin/commit {{ .CLI_ARGS }}
